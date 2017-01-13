@@ -397,8 +397,13 @@ Executor::Executor(const InterpreterOptions &opts, InterpreterHandler *ih)
 
 const Module *Executor::setModule(llvm::Module *module, 
                                   const ModuleOptions &opts) {
-  assert(!kmodule && module && "can only register one module"); // XXX gross
-  
+  // assert(!kmodule && module && "can only register one module"); // XXX gross
+ 
+  if(kmodule) {
+    delete kmodule;
+    kmodule = 0;
+  }
+ 
   kmodule = new KModule(module);
 
   // Initialize the context.
@@ -409,7 +414,10 @@ const Module *Executor::setModule(llvm::Module *module,
 #endif
   Context::initialize(TD->isLittleEndian(),
                       (Expr::Width) TD->getPointerSizeInBits());
-
+  if(specialFunctionHandler) {
+    delete specialFunctionHandler;
+    specialFunctionHandler = 0;
+  }
   specialFunctionHandler = new SpecialFunctionHandler(*this);
 
   specialFunctionHandler->prepare();
@@ -417,6 +425,12 @@ const Module *Executor::setModule(llvm::Module *module,
   specialFunctionHandler->bind();
 
   if (StatsTracker::useStatistics() || userSearcherRequiresMD2U()) {
+   
+    if(statsTracker) {
+      delete statsTracker;
+      statsTracker = 0;
+    } 
+
     statsTracker = 
       new StatsTracker(*this,
                        interpreterHandler->getOutputFilename("assembly.ll"),
